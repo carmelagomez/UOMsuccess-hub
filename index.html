@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>
+:root{color-scheme:light}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>UOM Re-enrolment Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: sticky header + tab rail; one working panel at a time, study-period calculator drives every date on the page */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --sunk:#e8ecf2; --line:#d5dbe5;
+  --ink:#141b2d; --muted:#5a6479; --navy:#1b2a4e; --onnavy:#ffffff;
+  --accent:#e0a526; --accent-ink:#3d2b00; --accent-soft:#fbf1d6;
+  --email:#2f6fdb; --email-soft:#e3ecfb; --call:#15896b; --call-soft:#dcf2eb;
+  --final:#c2443c; --final-soft:#f9e1df; --win:#7a4fc4; --win-soft:#ece4f8;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1420; --surface:#171e2e; --sunk:#1e2638; --line:#2c3650;
+  --ink:#e8ecf4; --muted:#9aa4ba; --navy:#0a0f1a; --onnavy:#e8ecf4;
+  --accent:#f0b940; --accent-ink:#2a1d00; --accent-soft:#3a2f14;
+  --email:#7ea8f5; --email-soft:#1c2a47; --call:#4cc9a4; --call-soft:#143328;
+  --final:#f08880; --final-soft:#3d1c1a; --win:#b394ec; --win-soft:#2a2042; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1420; --surface:#171e2e; --sunk:#1e2638; --line:#2c3650;
+  --ink:#e8ecf4; --muted:#9aa4ba; --navy:#0a0f1a; --onnavy:#e8ecf4;
+  --accent:#f0b940; --accent-ink:#2a1d00; --accent-soft:#3a2f14;
+  --email:#7ea8f5; --email-soft:#1c2a47; --call:#4cc9a4; --call-soft:#143328;
+  --final:#f08880; --final-soft:#3d1c1a; --win:#b394ec; --win-soft:#2a2042; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body)}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+.top{background:var(--navy);color:var(--onnavy);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.top-in{max-width:1180px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.mark{width:34px;height:34px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:800 15px var(--display)}
+.top h1{font-size:19px;font-weight:700}
+.top .sub{font-size:12.5px;opacity:.75}
+.tabs{max-width:1180px;margin:0 auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin}
+.tab{appearance:none;border:0;background:transparent;color:var(--onnavy);opacity:.72;font:600 13.5px var(--body);padding:10px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+.tab:hover{opacity:1}
+.tab[aria-selected="true"]{opacity:1;border-bottom-color:var(--accent)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:24px 60px}
+.panel{display:grid;gap:22px}
+.intro{max-width:70ch;color:var(--muted)}
+.intro strong{color:var(--ink)}
+.eyebrow{font:600 11.5px var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
+.grid2>*,.grid3>*{min-width:0}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 13px var(--body);padding:7px 12px;border-radius:8px;cursor:pointer}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+/* calculator */
+.calc{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;background:var(--accent-soft);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.field{display:grid;gap:4px}
+.field label{font:600 12px var(--body);color:var(--muted)}
+.field input{font:500 14px var(--body);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0}
+.note{font-size:12.5px;color:var(--muted)}
+.example{display:inline-block;font:600 11px var(--body);background:var(--final-soft);color:var(--final);padding:2px 8px;border-radius:99px;margin-left:6px}
+/* timeline */
+.timeline{display:grid;gap:0;position:relative}
+.step{display:grid;grid-template-columns:120px 22px 1fr;gap:14px;align-items:start}
+.when{text-align:right;padding-top:14px}
+.when .wk{font:700 15px var(--display)}
+.when .dt{font:500 12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.rail{position:relative;height:100%;min-height:90px}
+.rail::before{content:"";position:absolute;left:10px;top:0;bottom:0;width:2px;background:var(--line)}
+.dot{position:absolute;left:3px;top:18px;width:16px;height:16px;border-radius:50%;border:3px solid var(--surface);box-shadow:0 0 0 2px var(--line)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-block:6px}
+.card h3{font-size:16px;font-weight:700;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.card p{margin:.35em 0 0;color:var(--muted)}
+.card ul{margin:.5em 0 0;padding-left:1.1em}
+.chip{font:600 11px var(--body);padding:2px 9px;border-radius:99px;letter-spacing:.02em}
+.c-email{background:var(--email-soft);color:var(--email)} .d-email{background:var(--email)}
+.c-call{background:var(--call-soft);color:var(--call)} .d-call{background:var(--call)}
+.c-final{background:var(--final-soft);color:var(--final)} .d-final{background:var(--final)}
+.c-win{background:var(--win-soft);color:var(--win)} .d-win{background:var(--win)}
+.c-auto{background:var(--sunk);color:var(--muted);border:1px dashed var(--muted)} .d-auto{background:var(--muted)}
+.card.auto{background:transparent;border-style:dashed}
+.keydates{display:flex;flex-wrap:wrap;gap:8px 18px}
+.kd{display:grid;gap:1px}
+.kd span{font:600 11px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kd b{font:700 14px var(--body);font-variant-numeric:tabular-nums}
+.acts{margin:.6em 0 0;padding:0;list-style:none;display:grid;gap:5px}
+.acts li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline}
+.acts .ad{font:500 12px var(--mono);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:92px}
+.flag{font-size:12.5px;color:var(--final);margin-top:6px}
+.who{font-size:12.5px;color:var(--muted);margin-top:6px}
+.who b{color:var(--ink)}
+.status{font:600 11px var(--body);padding:2px 8px;border-radius:6px;background:var(--sunk);color:var(--muted)}
+.status.now{background:var(--accent);color:var(--accent-ink)}
+@media (max-width:560px){.step{grid-template-columns:78px 18px 1fr;gap:8px}.when .wk{font-size:13px}.rail::before{left:8px}.dot{left:1px}}
+/* rules */
+.rule{border-left:4px solid var(--call);padding:4px 0 4px 14px}
+.rule.stop{border-left-color:var(--final)}
+.rule h3{font-size:15px}
+.rule ul{margin:.4em 0 0;padding-left:1.1em}
+/* templates */
+.tpl-list{display:grid;gap:14px}
+.tpl{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tpl-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.tpl-head h3{font-size:15.5px}
+.tpl pre{margin:0;padding:14px 16px;white-space:pre-wrap;font:14px/1.6 var(--body);color:var(--ink);background:var(--surface)}
+.tpl .subj{padding:10px 16px 0;font-size:13px;color:var(--muted)}
+.tpl .subj b{color:var(--ink)}
+.filter{display:flex;gap:6px;flex-wrap:wrap}
+.filter .btn[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+/* week table */
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font:600 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--sunk)}
+tr:last-child td{border-bottom:0}
+td.day{font:700 14px var(--display);white-space:nowrap}
+.mbs{color:var(--ink)}
+.uom{display:inline-block;background:var(--accent-soft);color:var(--ink);border:1px solid var(--accent);padding:2px 8px;border-radius:6px;font-weight:600}
+.mode{display:flex;gap:6px;flex-wrap:wrap}
+.mode .btn[aria-pressed="true"]{background:var(--navy);color:var(--onnavy);border-color:var(--navy)}
+.day-list{display:grid;gap:0;margin:0;padding:0;list-style:none}
+.day-list li{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.day-list li:last-child{border-bottom:0}
+.day-list .t{font:500 12.5px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.split{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--sunk);margin-top:8px}
+.split span{display:block}
+.split .m{background:var(--navy)} .split .u{background:var(--accent)}
+:root:not([data-theme="light"]) .split .m{outline:1px solid var(--line)}
+.legend{display:flex;gap:14px;font-size:12.5px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+/* checklist */
+.check-group{display:grid;gap:4px}
+.check{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:start;padding:10px 12px;border-radius:8px}
+.check:hover{background:var(--sunk)}
+.check input{width:17px;height:17px;margin-top:3px;accent-color:var(--call)}
+.check label{cursor:pointer}
+.check.done label{color:var(--muted);text-decoration:line-through}
+.owner{font:600 11px var(--body);padding:2px 8px;border-radius:99px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.owner.mich{background:var(--accent-soft);color:var(--ink)}
+.progress{font:700 28px var(--display)}
+/* tracker */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px}
+.col{background:var(--sunk);border-radius:8px;padding:10px 12px}
+.col code{font:500 12.5px var(--mono);color:var(--ink)}
+.col p{margin:4px 0 0;font-size:13px;color:var(--muted)}
+.funnel{display:grid;gap:8px}
+.fstep{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:center}
+.fbar{height:30px;border-radius:6px;background:var(--navy);color:var(--onnavy);display:flex;align-items:center;padding:0 10px;font:600 12.5px var(--body);white-space:nowrap}
+.fstep:last-child .fbar{background:var(--call);color:#fff}
+.warn{background:var(--final-soft);border:1px solid var(--final);color:var(--ink);border-radius:10px;padding:12px 14px;font-size:13.5px}
+.warn b{color:var(--final)}
+.edit-ctl{margin-left:auto;display:flex;align-items:center;gap:10px}
+.edit-ctl .sub{font-size:12.5px}
+#edit-btn[aria-pressed="true"]{background:var(--onnavy);color:var(--navy);border-color:var(--onnavy)}
+.edit-hint{display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;font-size:13.5px}
+body.editing .edit-hint{display:block}
+body.editing [data-k]{outline:1px dashed var(--accent);outline-offset:3px;border-radius:3px;cursor:text}
+body.editing [data-k]:hover{background:var(--accent-soft)}
+body.editing [data-k]:focus{outline:2px solid var(--accent);background:var(--accent-soft)}
+.edited-mark{display:none}
+.tpl-tools{display:none;gap:6px}
+body.editing .tpl-tools{display:flex}
+.subj.nosubj{display:none}
+body.editing .subj.nosubj{display:block}
+.add-tpl{display:none}
+body.editing .add-tpl{display:inline-block}
+@media (prefers-reduced-motion:no-preference){.panel{animation:fade .18s ease-out}@keyframes fade{from{opacity:.4}to{opacity:1}}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="mark" aria-hidden="true">RE</div>
+    <div>
+      <h1>UOM Re-enrolment Hub</h1>
+      <div class="sub">Continuing online students · re-enrolment calls and emails only</div>
+    </div>
+    <div class="edit-ctl"><span class="sub" id="save-state" aria-live="polite"></span><button class="btn primary" id="edit-btn" aria-pressed="false" hidden>Edit page</button></div>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Hub sections">
+    <button class="tab" role="tab" id="tab-strategy" aria-selected="true" data-p="strategy">Engagement Strategy</button>
+    <button class="tab" role="tab" id="tab-scripts" aria-selected="false" data-p="scripts">Scripts &amp; Templates</button>
+    <button class="tab" role="tab" id="tab-week" aria-selected="false" data-p="week">Her Week</button>
+    <button class="tab" role="tab" id="tab-lane" aria-selected="false" data-p="lane">Our Lane</button>
+    <button class="tab" role="tab" id="tab-tracker" aria-selected="false" data-p="tracker">Tracker &amp; Reporting</button>
+    <button class="tab" role="tab" id="tab-launch" aria-selected="false" data-p="launch">Launch Checklist</button>
+  </nav>
+</header>
+
+<main>
+<div class="edit-hint" role="note"><b>Editing is on.</b> Click any outlined text to change it. Changes save when you click away, and everyone with access sees them. Click <b>Done editing</b> when you're finished.</div>
+
+<!-- ============ STRATEGY ============ -->
+<section class="panel" id="p-strategy" role="tabpanel" aria-labelledby="tab-strategy">
+  <p class="intro">Every re-enrolment window runs on the weeks of the <strong>term before</strong>. Pick the Online Term you're planning for and every touchpoint lines up with the 2026 academic calendar. The two automated SMSs are already in the journey; everything else fills the gap between them.</p>
+
+  <div class="calc">
+    <div class="field"><label for="ot-pick">Planning for</label>
+      <select id="ot-pick" style="font:600 14px var(--body);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)"></select></div>
+    <div class="keydates" id="keydates"></div>
+  </div>
+
+  <div class="legend" style="margin-top:-8px">
+    <span><i style="background:var(--muted)"></i>Automated (already in the journey)</span>
+    <span><i style="background:var(--email)"></i>Email</span>
+    <span><i style="background:var(--call)"></i>Calls</span>
+    <span><i style="background:var(--final)"></i>Final push</span>
+    <span><i style="background:var(--win)"></i>Win-back</span>
+  </div>
+
+  <div class="timeline" id="timeline"></div>
+  <p class="note">Dates follow the University of Melbourne Online 2026 Academic Calendar (dates subject to change). The automated journey sheet lists OT6 dates one day earlier (Sunday 25 Oct start, 18 Oct application deadline) than the calendar (Monday 26 Oct, Monday 19 Oct).</p>
+
+  <div class="grid3">
+    <div class="box"><div class="eyebrow">Call standard</div><p style="margin:.4em 0 0">2 call attempts per student, at different times of day. Leave a voicemail on the first attempt, and send the follow-up email with the vcita link the same day.</p></div>
+    <div class="box"><div class="eyebrow">Best time to call</div><p style="margin:.4em 0 0">Part-time online postgrads are usually at work. Lunchtime (12–1pm) and after 4:30pm get the best pick-up rates.</p></div>
+    <div class="box"><div class="eyebrow">Who's in each round</div><p style="margin:.4em 0 0">Before every send or call round, refresh the eligible list and <b>remove anyone who has already enrolled</b>. Nobody should get a reminder after they've done it.</p></div>
+  </div>
+</section>
+
+<!-- ============ SCRIPTS ============ -->
+<section class="panel" id="p-scripts" role="tabpanel" aria-labelledby="tab-scripts" hidden>
+  <p class="intro">Starter wording for every touchpoint. Replace anything in <strong>[square brackets]</strong>. Get the emails approved by the UOM side before the first send.</p>
+  <div class="filter" role="group" aria-label="Filter templates">
+    <button class="btn primary add-tpl" id="add-tpl">+ Add template</button>
+    <button class="btn" aria-pressed="true" data-f="all">All</button>
+    <button class="btn" aria-pressed="false" data-f="email">Emails</button>
+    <button class="btn" aria-pressed="false" data-f="call">Calls</button>
+    <button class="btn" aria-pressed="false" data-f="refer">Referrals</button>
+  </div>
+  <div class="tpl-list" id="tpls"></div>
+</section>
+
+<!-- ============ WEEK ============ -->
+<section class="panel" id="p-week" role="tabpanel" aria-labelledby="tab-week" hidden>
+  <p class="intro">She's a full MBS SSA first. UOM is seasonal, so her time split changes with the calendar. <strong>MBS at-risk calls always take priority</strong> over UOM work.</p>
+
+  <div class="mode" role="group" aria-label="Period">
+    <button class="btn" aria-pressed="true" data-m="off">Off-peak</button>
+    <button class="btn" aria-pressed="false" data-m="peak">Peak (week 5 to AW)</button>
+    <button class="btn" aria-pressed="false" data-m="final">Final push (PTP + week 1)</button>
+  </div>
+
+  <div class="box">
+    <div class="eyebrow" id="split-label">Off-peak split</div>
+    <div class="split" aria-hidden="true"><span class="m" id="split-m" style="width:90%"></span><span class="u" id="split-u" style="width:10%"></span></div>
+    <div class="legend"><span><i style="background:var(--navy)"></i>MBS: <b id="split-mt">90%</b></span><span><i style="background:var(--accent)"></i>UOM: <b id="split-ut">10%</b></span></div>
+    <p class="note" id="split-desc" style="margin:.8em 0 0"></p>
+  </div>
+
+  <div>
+    <h2 style="font-size:20px;margin-bottom:10px">A typical week</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Day</th><th>Morning</th><th>Afternoon</th></tr></thead>
+      <tbody id="week-body"></tbody>
+    </table></div>
+  </div>
+
+  <div class="grid2">
+    <div class="box">
+      <h2 style="font-size:18px;margin-bottom:8px" id="day-title">A typical day</h2>
+      <ul class="day-list" id="day-list"></ul>
+    </div>
+    <div class="box">
+      <h2 style="font-size:18px;margin-bottom:8px">Guardrails</h2>
+      <ul class="guard" style="margin:0;padding-left:1.1em;display:grid;gap:8px">
+        <li>If an MBS at-risk call clashes with a UOM block, the MBS call wins and the UOM block moves.</li>
+        <li>Check whether a UOM window overlaps an MBS census or re-enrolment period. If it does, bring the UOM emails forward and plan cover.</li>
+        <li>UOM work is logged separately in the CRM, so both partners' KPIs stay clean.</li>
+        <li>No UOM cold calls in assessment week, or on assessment due days. Callbacks and vcita bookings only.</li>
+        <li>Review the split with Carms after the first UOM cycle.</li>
+        <li>If she's on leave during a peak, the emails still go out on schedule and a cover advisor takes the call rounds.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LANE ============ -->
+<section class="panel" id="p-lane" role="tabpanel" aria-labelledby="tab-lane" hidden>
+  <p class="intro">Student success for UOM sits with the <strong>UOM student success advisers</strong>. We own re-enrolment, end to end. This page is the line between the two.</p>
+  <div class="grid2">
+    <div class="box rule">
+      <h3>We handle</h3>
+      <ul>
+        <li>Re-enrolment reminder emails at each touchpoint</li>
+        <li>Re-enrolment calls to students who haven't enrolled yet</li>
+        <li>Walking students through the enrolment steps and key dates</li>
+        <li>Booking follow-up calls through vcita</li>
+        <li>Win-back emails to students who lapsed, pointing them to the next intake</li>
+        <li>Logging every attempt and outcome, and reporting the numbers</li>
+      </ul>
+    </div>
+    <div class="box rule stop">
+      <h3>We refer to the UOM SSAs</h3>
+      <ul>
+        <li>Wellbeing, health or personal circumstances affecting study</li>
+        <li>Academic performance, failed subjects or progression concerns</li>
+        <li>Extensions, special consideration or leave of absence</li>
+        <li>Course changes, credit or subject selection advice</li>
+        <li>Complaints or anything the student asks to escalate</li>
+      </ul>
+    </div>
+  </div>
+  <div class="box">
+    <h2 style="font-size:18px;margin-bottom:8px">How to refer, in 3 steps</h2>
+    <ol style="margin:0;padding-left:1.2em;display:grid;gap:6px">
+      <li>Tell the student who will contact them and roughly when. Don't promise an outcome.</li>
+      <li>Send the referral using the handover template (Scripts &amp; Templates → Referrals) to <b>[UOM SSA inbox]</b> on the same day.</li>
+      <li>Log it in the tracker as <code>Referred to UOM SSA</code>, then continue with re-enrolment only if the student wants to.</li>
+    </ol>
+  </div>
+  <div class="warn"><b>Confirm before launch:</b> that re-enrolment contact is within scope of the UOM agreement, and which inbox or contact the UOM SSAs want referrals sent to.</div>
+</section>
+
+<!-- ============ TRACKER ============ -->
+<section class="panel" id="p-tracker" role="tabpanel" aria-labelledby="tab-tracker" hidden>
+  <div class="warn"><b>Student details never go on this page.</b> Names, IDs and contact details stay in the tracker spreadsheet on SharePoint or in the CRM. This hub holds the process only.</div>
+  <p class="intro">One row per eligible student, per study period. These columns give Carms the funnel numbers for every cycle.</p>
+  <div class="cols">
+    <div class="col"><code>Student ID</code><p>From the UOM eligible list</p></div>
+    <div class="col"><code>Program</code><p>Course the student is enrolled in</p></div>
+    <div class="col"><code>Study period</code><p>The period they're due to re-enrol for</p></div>
+    <div class="col"><code>Segment</code><p>Continuing · Final subject · Returning from a break</p></div>
+    <div class="col"><code>Email 1 / 2 / Final sent</code><p>Date each email went out</p></div>
+    <div class="col"><code>Call attempt 1 / 2 / Final</code><p>Date and result: reached, voicemail, no answer</p></div>
+    <div class="col"><code>vcita booked</code><p>Yes / No</p></div>
+    <div class="col"><code>Outcome</code><p>Enrolled · Intends to enrol · Taking a break · Withdrawing · No contact</p></div>
+    <div class="col"><code>Reason not enrolling</code><p>Cost · Workload · Personal · Career change · Other</p></div>
+    <div class="col"><code>Referred to UOM SSA</code><p>Yes / No, with date</p></div>
+    <div class="col"><code>Notes</code><p>Short, factual, no sensitive detail</p></div>
+  </div>
+
+  <div class="grid2">
+    <div class="box">
+      <h2 style="font-size:18px;margin-bottom:12px">The funnel we report each period</h2>
+      <div class="funnel">
+        <div class="fstep"><span class="eyebrow">Eligible</span><div class="fbar" style="width:100%">All students due to re-enrol</div></div>
+        <div class="fstep"><span class="eyebrow">Contacted</span><div class="fbar" style="width:88%">Emailed or called</div></div>
+        <div class="fstep"><span class="eyebrow">Reached</span><div class="fbar" style="width:62%">Spoke to us</div></div>
+        <div class="fstep"><span class="eyebrow">Re-enrolled</span><div class="fbar" style="width:48%">Enrolled by census</div></div>
+      </div>
+      <p class="note" style="margin-top:10px">Bar lengths are illustrative only.</p>
+    </div>
+    <div class="box">
+      <h2 style="font-size:18px;margin-bottom:8px">Measures</h2>
+      <ul style="margin:0;padding-left:1.1em;display:grid;gap:8px">
+        <li><b>Re-enrolment rate</b>: re-enrolled ÷ eligible. Compare against the baseline from the last period before this program.</li>
+        <li><b>Contact rate</b>: reached ÷ eligible. Sits alongside her existing contact-rate KPI.</li>
+        <li><b>Converted after contact</b>: re-enrolled after a call ÷ reached.</li>
+        <li><b>Revenue retained</b>: extra re-enrolments × average subject fee.</li>
+        <li><b>Top reasons for not enrolling</b>: feeds back into the scripts and objection handling.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LAUNCH ============ -->
+<section class="panel" id="p-launch" role="tabpanel" aria-labelledby="tab-launch" hidden>
+  <div class="grid2" style="align-items:center">
+    <p class="intro" style="margin:0">Everything to organise before the first UOM call round. Carms owns almost all of it; the <span class="owner mich">Michelle</span> items are the only decisions needed from her. Ticks save in your browser only.</p>
+    <div class="box" style="display:flex;gap:14px;align-items:center"><div class="progress" id="prog">0/0</div><div class="note">items done</div></div>
+  </div>
+  <div id="checks" class="grid2"></div>
+</section>
+
+</main>
+
+<script>
+(function(){
+  const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+  /* ---------- shared edits ---------- */
+  let EDIT={};                       // key -> saved override doc, shared through the db capability
+  let editing=false, pending=false;
+  const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const ov=(k,d)=>{const e=EDIT[k];return e&&typeof e.text==='string'?e.text:d};
+  const ek=(k,d,tag='span')=>`<${tag} data-k="${k}" data-orig="${esc(ov(k,d))}">${esc(ov(k,d))}</${tag}>`;
+
+  /* ---------- tabs ---------- */
+  const tabs=[...document.querySelectorAll('.tab')];
+  function show(p){tabs.forEach(t=>{const on=t.dataset.p===p;t.setAttribute('aria-selected',on);document.getElementById('p-'+t.dataset.p).hidden=!on});store.set('uom-tab',p)}
+  tabs.forEach(t=>t.addEventListener('click',()=>show(t.dataset.p)));
+  const h=location.hash.replace('#','');
+  show(tabs.some(t=>t.dataset.p===h)?h:store.get('uom-tab','strategy'));
+
+  /* ---------- timeline (2026 UOM Online Academic Calendar) ---------- */
+  // 2026 UOM Online Academic Calendar: Online Term start dates (Mondays). Add next year's terms to the end of this list.
+  const OTS=[{k:'OT1',s:'2026-01-12'},{k:'OT2',s:'2026-03-09'},{k:'OT3',s:'2026-05-04'},{k:'OT4',s:'2026-07-06'},{k:'OT5',s:'2026-08-31'},{k:'OT6',s:'2026-10-26'}];
+  const D=v=>{const [y,m,d]=v.split('-').map(Number);return new Date(y,m-1,d)};
+  const add=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+  const f=d=>d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+  const fr=(a,b)=>a.toLocaleDateString('en-AU',{day:'numeric',month:'short'})+' – '+b.toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+  const sel=document.getElementById('ot-pick');
+  OTS.slice(1).forEach(o=>{const op=document.createElement('option');op.value=o.s;op.textContent=o.k+' '+o.s.slice(0,4)+' (starts '+D(o.s).toLocaleDateString('en-AU',{day:'numeric',month:'short'})+')';sel.appendChild(op)});
+  // default: the first term whose start is still ahead
+  const nextOT=OTS.slice(1).find(o=>D(o.s)>new Date())||OTS[OTS.length-1];
+  sel.value=store.get('uom-ot-start',nextOT.s);
+  if(!sel.value)sel.value=nextOT.s;
+  function render(){
+    const i=OTS.findIndex(o=>o.s===sel.value),T=OTS[i],P=OTS[i-1];
+    const ts=D(T.s),ps=D(P.s);
+    const wk=n=>add(ps,(n-1)*7);                 // preceding OT week n (Mon)
+    const aw=add(ps,42), ptp=add(ts,-7);
+    const K={app:ptp,enrol:ts,census:add(ts,11),results:add(ts,1),sms1:add(ts,-36),sms2:ptp,due6:wk(6),dueAW:add(aw,2)};
+    document.getElementById('keydates').innerHTML=[
+      ['Application deadline',K.app],['Enrolment deadline',K.enrol],['Census date',K.census],[P.k+' results out',K.results]
+    ].map(([l,d])=>`<div class="kd"><span>${l}</span><b>${f(d)}</b></div>`).join('');
+    const S=[
+      {from:wk(3),wk:P.k+' · Week 3',type:'auto',chip:'Automated SMS',title:'Re-enrolment SMS #1',who:'All eligible students',
+        acts:[[K.sms1,'Automated SMS goes out from the journey. No action needed, but check it sent.']]},
+      {from:wk(5),wk:P.k+' · Week 5',type:'call',chip:'Email + calls',title:'Heads-up email and call round 1',who:'Not yet enrolled',tpl:'Email 1 · Call script · Voicemail · Follow-up email',
+        acts:[[wk(5),'Heads-up email to everyone not yet enrolled: '+T.k+' dates, how to enrol, vcita link.'],
+              [add(wk(5),1),'Call round 1 (Tue–Fri). Voicemail on no answer, follow-up email with vcita link the same day.']]},
+      {from:wk(6),wk:P.k+' · Week 6',type:'call',chip:'Calls + email',title:'Call round 2 and mid-point reminder',who:'Not yet enrolled, not reached',tpl:'Call script · Email 2',
+        acts:[[K.due6,'Assessment due today. No calls.'],
+              [add(wk(6),1),'Call round 2 (Tue–Thu), at a different time of day from round 1.'],
+              [add(wk(6),4),'Mid-point reminder email to everyone still not enrolled. This fills the gap between the two SMSs.']]},
+      {from:aw,wk:P.k+' · Assessment week',type:'email',chip:'Email only',title:'Quiet week: callbacks only',who:'Not yet enrolled',tpl:'Email 2b · Assessments done',
+        acts:[[aw,'No cold calls. Students are finishing assessments. Keep vcita bookings and callbacks only.'],
+              [add(aw,3),'"Assessments done, now lock in '+T.k+'" email, sent the day after the assessment due date.']]},
+      {from:ptp,wk:'Pre-teaching period',type:'final',chip:'SMS + final calls',title:'Final push before the enrolment deadline',who:'Still not enrolled',tpl:'Call script · Email 3 · Last chance',
+        acts:[[K.sms2,'Automated re-enrolment SMS #2 goes out.'],
+              [add(ptp,1),'Final call round (Tue–Thu), including students who said they intend to enrol.'],
+              [add(ptp,4),'Last-chance email: the deadline is Monday.']]},
+      {from:ts,wk:T.k+' · Week 1',type:'final',chip:'Deadline',title:'Enrolment deadline and results',who:'Intends to enrol · Waiting on results',tpl:'Call script · Referral',
+        acts:[[K.enrol,'Enrolment deadline. Mark outcomes in the tracker.'],
+              [K.results,P.k+' results released. Follow up anyone who was waiting on results. Refer anyone who failed a subject to the UOM SSAs.']],
+        flag:'Confirm with UOM whether students can still enrol after the deadline, up to census. If yes, one last call to "intends to enrol" students.'},
+      {from:add(ts,14),wk:T.k+' · Week 3',type:'win',chip:'Email',title:'Win-back',who:'Lapsed this term',tpl:'Email 4 · Win-back',
+        acts:[[add(ts,14),'Census has passed ('+f(K.census)+'). One win-back email pointing to the next Online Term. Close out the tracker and report the funnel.']]}
+    ];
+    const today=new Date();today.setHours(0,0,0,0);
+    const tl=document.getElementById('timeline');tl.innerHTML='';
+    let flagged=false;
+    S.forEach((s,idx)=>{const P2=T.k+'-'+T.s.slice(0,4)+'-'+idx;
+      const end=add(s.from,6);let st='';
+      if(end<today)st='<span class="status">Done</span>';
+      else if(s.from<=today){st='<span class="status now">This week</span>';flagged=true}
+      else if(!flagged){st='<span class="status now">Next up</span>';flagged=true}
+      const el=document.createElement('div');el.className='step';
+      el.innerHTML=`<div class="when"><div class="wk">${s.wk}</div><div class="dt">${fr(s.from,end)}</div></div>
+      <div class="rail"><span class="dot d-${s.type}"></span></div>
+      <div class="card ${s.type==='auto'?'auto':''}"><h3>${ek('st-'+P2,s.title)}<span class="chip c-${s.type}">${s.chip}</span>${st}</h3>
+      <ul class="acts">${s.acts.map((a,j)=>`<li><span class="ad">${f(a[0])}</span>${ek('act-'+P2+'-'+j,a[1])}</li>`).join('')}</ul>
+      ${s.flag?`<div class="flag">${ek('flag-'+P2,s.flag)}</div>`:''}
+      <div class="who">Who: <b>${ek('who-'+P2,s.who)}</b>${s.tpl?` · Template: <b>${ek('tp-'+P2,s.tpl)}</b>`:''}</div></div>`;
+      tl.appendChild(el);
+    });
+    applyEditable();
+  }
+  sel.addEventListener('change',()=>{store.set('uom-ot-start',sel.value);render()});
+  render();
+
+  /* ---------- templates ---------- */
+  const T=[
+    {cat:'email',title:'Email 1 · Heads-up (preceding OT, week 5)',subj:'Your next subject is coming up – time to enrol for [OT]',body:`Hi [First name],
+
+I hope your studies are going well. Your next study period, [OT], starts on [start date], so now is a great time to enrol in your next subject.
+
+To enrol:
+1. Log in to [student portal]
+2. Go to [enrolment page]
+3. Select your subject for [OT]
+
+Enrolments close on [deadline].
+
+If you'd like to talk through your next subject or your study plan, you can book a quick call with me here: [vcita link]
+
+Kind regards,
+[Your name]
+[Team name]`},
+    {cat:'email',title:'Email 2 · Mid-point reminder (preceding OT, week 6)',subj:'Reminder: enrol for [OT] by [deadline]',body:`Hi [First name],
+
+Just a quick reminder that enrolments for [OT] are now open and close on [deadline].
+
+You can enrol here: [enrolment link]
+
+If anything is making it tricky to enrol, like workload, timing or cost, I'm happy to talk it through. Book a time that suits you: [vcita link]
+
+Kind regards,
+[Your name]`},
+    {cat:'email',title:'Email 2b · Assessments done (assessment week)',subj:'Assessments done? Lock in [OT] next',body:`Hi [First name],
+
+Well done on getting through your assessments this term.
+
+Your next Online Term, [OT], starts on [start date], and enrolments close on [deadline]. If you haven't enrolled yet, now's a great time: [enrolment link]
+
+Waiting on results before you decide? Results are released on [results date]. You can still book a quick chat with me in the meantime: [vcita link]
+
+Kind regards,
+[Your name]`},
+    {cat:'call',title:'Call script · Re-enrolment call',body:`OPEN
+"Hi [First name], it's [Your name] calling from [Team name]. Is now an OK time for a quick two-minute chat?"
+
+PURPOSE
+"I'm calling because [OT] starts on [start date], and I noticed you haven't enrolled in your next subject yet. I wanted to check in and see if I can help."
+
+ASK
+"Are you planning to continue in [OT]?"
+
+→ YES: "Great. Enrolments close on [deadline]. Would it help if I walked you through the steps now, or sent you the link?"
+→ UNSURE: "What's making you unsure?" Listen, then use the objection handling below.
+→ TAKING A BREAK: "That's completely fine. When are you thinking of coming back? I'll make a note and reach out before then."
+
+CLOSE
+"I'll send you an email now with the link and my booking page, in case anything comes up. Thanks for your time, [First name]."
+
+OBJECTION HANDLING
+Workload: "Many students in your situation take one subject at a time. Would a single subject work this period?"
+Cost: "I can point you to where the fee and payment details are, so you can plan ahead."
+Life events: "That sounds like a lot. Would it help to talk to one of the University's student success advisers? I can connect you." → Referral.
+Not sure about the next subject: "Let's look at what's available in [OT] together."`},
+    {cat:'call',title:'Voicemail',body:`"Hi [First name], it's [Your name] from [Team name]. I'm calling about enrolling for [OT], which starts on [start date]. I'll send you an email shortly with the enrolment link and a link to book a call at a time that suits you. Thanks, and speak soon."`},
+    {cat:'email',title:'Follow-up email after a call attempt',subj:'Sorry I missed you – enrolling for [OT]',body:`Hi [First name],
+
+I tried calling you today about enrolling for [OT], which starts on [start date].
+
+Here's the enrolment link: [enrolment link]
+Enrolments close on [deadline].
+
+If you'd like to chat, book a time that suits you here: [vcita link]
+
+Kind regards,
+[Your name]`},
+    {cat:'email',title:'Email 3 · Last chance (pre-teaching period)',subj:'Enrolments for [OT] close on [deadline]',body:`Hi [First name],
+
+This is a final reminder that enrolments for [OT] close on [deadline].
+
+Enrol here: [enrolment link]
+
+If something is stopping you from enrolling, reply to this email or book a call today and I'll do what I can to help: [vcita link]
+
+Kind regards,
+[Your name]`},
+    {cat:'email',title:'Email 4 · Win-back (week 3, after census)',subj:"Whenever you're ready – [next OT] is open",body:`Hi [First name],
+
+I noticed you didn't enrol for [OT]. That's completely OK, and life gets busy.
+
+When you're ready to continue, the next study period is [next OT], starting on [next start date].
+
+If you'd like to talk about getting back into study, book a time with me here: [vcita link]
+
+Kind regards,
+[Your name]`},
+    {cat:'refer',title:'Referral handover to the UOM SSAs',subj:'Referral: [Student ID] – [one-line reason]',body:`Hi [UOM SSA team / name],
+
+During a re-enrolment call today, [First name Last name] ([Student ID], [Program]) raised something that sits with your team.
+
+Reason for referral: [short, factual summary – no more detail than needed]
+What I told the student: that someone from your team will be in touch [timeframe].
+Re-enrolment status: [enrolled / intends to enrol / on hold].
+
+Please let me know if you need anything else from me.
+
+Kind regards,
+[Your name]
+[Team name]`}
+  ];
+  const wrap=document.getElementById('tpls');
+  let tplFilter='all';
+  const CHIP={email:'<span class="chip c-email">Email</span>',call:'<span class="chip c-call">Call</span>',refer:'<span class="chip c-final">Referral</span>'};
+  function tplItems(){
+    const out=[];
+    T.forEach((t,i)=>{const k='tpl-b'+i,e=EDIT[k];if(e&&e.removed)return;out.push({k,builtin:true,edited:!!e,cat:t.cat,title:e?.title??t.title,subj:e?.subj??(t.subj||''),body:e?.body??t.body})});
+    Object.keys(EDIT).filter(k=>k.startsWith('tpl-n')).sort((a,b)=>(EDIT[a].created||0)-(EDIT[b].created||0)).forEach(k=>{const e=EDIT[k];out.push({k,builtin:false,cat:e.cat||'email',title:e.title||'',subj:e.subj||'',body:e.body||''})});
+    return out;
+  }
+  let TPLS=[];
+  function renderTpls(){
+    TPLS=tplItems();wrap.innerHTML='';
+    TPLS.forEach((t,i)=>{
+      const el=document.createElement('article');el.className='tpl';el.dataset.cat=t.cat;
+      el.hidden=!(tplFilter==='all'||t.cat===tplFilter);
+      const tools=t.builtin?(t.edited?`<button class="btn" data-act="reset" data-i="${i}">Restore original</button><button class="btn" data-act="remove" data-i="${i}">Remove</button>`:`<button class="btn" data-act="remove" data-i="${i}">Remove</button>`)
+        :`<select data-act="cat" data-i="${i}" aria-label="Template type" class="btn"><option value="email"${t.cat==='email'?' selected':''}>Email</option><option value="call"${t.cat==='call'?' selected':''}>Call</option><option value="refer"${t.cat==='refer'?' selected':''}>Referral</option></select><button class="btn" data-act="remove" data-i="${i}">Delete</button>`;
+      el.innerHTML=`<div class="tpl-head"><h3><span data-k="${t.k}" data-f="title">${esc(t.title)}</span> ${CHIP[t.cat]||''}</h3><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="tpl-tools">${tools}</span><button class="btn" data-act="copy" data-i="${i}">Copy</button></div></div>
+      <div class="subj">Subject: <b data-k="${t.k}" data-f="subj">${esc(t.subj)}</b></div><pre data-k="${t.k}" data-f="body"></pre>`;
+      wrap.appendChild(el);el.querySelector('pre').textContent=t.body;
+      if(!t.subj&&t.cat!=='email'&&t.cat!=='refer')el.querySelector('.subj').classList.add('nosubj');
+    });
+    applyEditable();
+  }
+  wrap.addEventListener('click',async e=>{
+    const b=e.target.closest('button[data-act]');if(!b)return;const t=TPLS[b.dataset.i];if(!t)return;
+    if(b.dataset.act==='copy'){
+      const pre=b.closest('.tpl').querySelector('pre');const subj=b.closest('.tpl').querySelector('[data-f="subj"]').innerText.trim();
+      const text=(subj?'Subject: '+subj+'\n\n':'')+pre.innerText;
+      const ok=()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1600)};
+      const fallback=()=>{const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Selected – press Ctrl+C';setTimeout(()=>b.textContent='Copy',2400)};
+      try{navigator.clipboard.writeText(text).then(ok,fallback)}catch(err){fallback()}
+    } else if(b.dataset.act==='reset'){await removeDoc(t.k)}
+    else if(b.dataset.act==='remove'){
+      if(b.dataset.confirm!=='1'){b.dataset.confirm='1';b.textContent='Click again to confirm';setTimeout(()=>{b.dataset.confirm='';b.textContent=t.builtin?'Remove':'Delete'},3000);return}
+      if(t.builtin)await saveDoc(t.k,{removed:true});else await removeDoc(t.k);
+    }
+  });
+  wrap.addEventListener('change',async e=>{
+    const sl=e.target.closest('select[data-act="cat"]');if(!sl)return;const t=TPLS[sl.dataset.i];
+    await saveDoc(t.k,{...EDIT[t.k],cat:sl.value});
+  });
+  document.querySelectorAll('.filter .btn[data-f]').forEach(b=>b.addEventListener('click',()=>{
+    tplFilter=b.dataset.f;
+    document.querySelectorAll('.filter .btn[data-f]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+    wrap.querySelectorAll('.tpl').forEach(t=>t.hidden=!(tplFilter==='all'||t.dataset.cat===tplFilter));
+  }));
+  document.getElementById('add-tpl').addEventListener('click',async()=>{
+    const k='tpl-n'+Date.now().toString(36);
+    await saveDoc(k,{title:'New template',subj:'Subject line',body:'Hi [First name],\n\nWrite your message here.\n\nKind regards,\n[Your name]',cat:tplFilter==='all'?'email':tplFilter,created:Date.now()});
+  });
+  renderTpls();
+
+  /* ---------- week ---------- */
+  const U=s=>`<span class="uom">UOM · ${s}</span>`;
+  const W={
+    off:{label:'Off-peak split',m:90,u:10,desc:'No UOM window open. UOM time goes on checking the eligible list, scheduling the next heads-up email and reviewing the last cycle.',
+      week:[['Mon','MBS at-risk and retention calls','MBS support calls, admin'],['Tue','MBS support calls','MBS Grad Cert to Masters calls'],['Wed','MBS at-risk and retention calls','MBS follow-ups, emails'],['Thu','MBS support calls','MBS re-enrolment calls'],['Fri','MBS catch-up, CRM notes','MBS reporting · '+U('1 hr: list check and email prep')]],
+      dayTitle:'A typical off-peak day',
+      day:[['8:30–9:00','Inbox, triage, today\'s MBS call list'],['9:00–12:00','MBS priority calls: at-risk and retention first'],['12:00–1:00','Lunch'],['1:00–3:30','MBS support and Grad Cert to Masters calls'],['3:30–5:00','MBS follow-ups, emails, CRM notes']]},
+    peak:{label:'Peak split (preceding OT week 5 to assessment week)',m:70,u:30,desc:'A UOM window is open. Two protected UOM afternoons a week, so MBS keeps predictable blocks around them.',
+      week:[['Mon','MBS at-risk and retention calls','MBS support calls, admin'],['Tue','MBS support calls',U('re-enrolment calls')],['Wed','MBS Grad Cert to Masters calls','MBS follow-ups, emails'],['Thu','MBS at-risk and retention calls',U('calls and follow-up emails')],['Fri','MBS catch-up, CRM notes','MBS reporting · '+U('tracker update, next week\'s list')]],
+      dayTitle:'A UOM afternoon (Tue or Thu)',
+      day:[['8:30–9:00','Inbox, triage, both call lists'],['9:00–12:00','MBS priority calls: at-risk and retention first'],['12:00–1:00',U('calls (lunchtime pick-up is best)')],['1:30–2:00','Lunch'],['2:00–4:00',U('call round, voicemails, vcita bookings')],['4:00–5:00',U('follow-up emails and tracker')]]},
+    final:{label:'Final push split (pre-teaching period and week 1)',m:65,u:35,desc:'Speed matters now. A short UOM slot every day means students who reply get a fast answer, while MBS keeps the rest of the day.',
+      week:[['Mon','MBS at-risk and retention calls · '+U('12–1 calls'),'MBS support calls · '+U('4:30 follow-ups')],['Tue','MBS support calls · '+U('12–1 calls'),U('final call round')],['Wed','MBS Grad Cert to Masters calls · '+U('12–1 calls'),'MBS follow-ups · '+U('4:30 follow-ups')],['Thu','MBS at-risk and retention calls · '+U('12–1 calls'),U('final call round')],['Fri','MBS catch-up · '+U('12–1 calls'),'MBS reporting · '+U('tracker, weekly numbers to Carms')]]},
+  };
+  W.final.dayTitle='A final-push day';
+  W.final.day=[['8:30–9:00','Inbox, triage, both call lists'],['9:00–12:00','MBS priority calls: at-risk and retention first'],['12:00–1:00',U('power hour: calls')],['1:00–1:30','Lunch'],['1:30–4:30','MBS support calls, Grad Cert to Masters calls, emails'],['4:30–5:00',U('follow-up emails, vcita bookings for tomorrow')]];
+  function renderWeek(m){
+    const w=W[m];curMode=m;
+    const cell=(k,html)=>{const e=EDIT[k];return e&&typeof e.text==='string'?`<span data-k="${k}" data-orig="${esc(e.text)}">${esc(e.text)}</span>`:`<span data-k="${k}" data-orig="">${html}</span>`};
+    document.querySelectorAll('.mode .btn').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===m));
+    document.getElementById('split-label').textContent=w.label;
+    document.getElementById('split-m').style.width=w.m+'%';document.getElementById('split-u').style.width=w.u+'%';
+    document.getElementById('split-mt').textContent=w.m+'%';document.getElementById('split-ut').textContent=w.u+'%';
+    document.getElementById('split-desc').innerHTML=ek('wd-'+m,w.desc);
+    document.getElementById('week-body').innerHTML=w.week.map((r,ri)=>`<tr><td class="day">${r[0]}</td><td>${cell(`wk-${m}-${ri}-1`,r[1])}</td><td>${cell(`wk-${m}-${ri}-2`,r[2])}</td></tr>`).join('');
+    document.getElementById('day-title').innerHTML=ek('dt-'+m,w.dayTitle);
+    document.getElementById('day-list').innerHTML=w.day.map((r,i)=>`<li><span class="t">${ek(`dtm-${m}-${i}`,r[0])}</span>${cell(`dy-${m}-${i}`,r[1])}</li>`).join('');
+    store.set('uom-mode',m);applyEditable();
+  }
+  let curMode='off';
+  document.querySelectorAll('.mode .btn').forEach(b=>b.addEventListener('click',()=>renderWeek(b.dataset.m)));
+  renderWeek(store.get('uom-mode','off'));
+
+  /* ---------- checklist ---------- */
+  const C=[
+    {g:'Scope and sign-off',items:[['Agree the scope: re-enrolment only, student success stays with UOM SSAs','Michelle'],['Confirm re-enrolment contact is covered by the UOM agreement','Carms'],['Align with Fern and the UOM side on who contacts which students, and when','Carms'],['Agree the referral contact or inbox for the UOM SSAs','Carms']]},
+    {g:'Data and dates',items:[['Get UOM study period, deadline and census dates for the next 12 months','Carms'],['Agree how and when we receive the eligible-to-re-enrol list','Carms'],['Unlock data access if it gets stuck','Michelle'],['Pull the baseline: last period\'s eligible vs re-enrolled numbers','Carms']]},
+    {g:'Tools and templates',items:[['Set up the tracker on SharePoint','Carms'],['Add UOM outcome codes to the CRM so calls log separately','Carms'],['Set up a UOM vcita booking page or link','Carms'],['Finalise email templates and get UOM approval','Carms'],['Confirm the sending mailbox and signature for UOM emails','Carms']]},
+    {g:'Advisor readiness',items:[['Brief the advisor on the role and time split','Carms'],['Training: UOM enrolment steps and systems','Carms'],['Training: re-enrolment conversations and role-plays','Carms'],['Training: referral rules and where our lane ends','Carms'],['Shadow and review calls in the first cycle','Carms']]},
+    {g:'Incentives and review',items:[['Add re-enrolment conversion alongside her contact-rate KPI','Carms'],['Decide on any incentive for re-enrolment results','Michelle'],['Recognise results in the Key Updates slide','Carms'],['Review the first cycle and report the numbers to Michelle','Carms']]}
+  ];
+  let done=store.get('uom-checks',{});
+  const cw=document.getElementById('checks');
+  function renderChecks(){
+    cw.innerHTML='';let n=0;
+    C.forEach((g,gi)=>{
+      const box=document.createElement('div');box.className='box';
+      box.innerHTML=`<h2 style="font-size:17px;margin-bottom:6px">${ek('cg-'+gi,g.g)}</h2>`;
+      const grp=document.createElement('div');grp.className='check-group';
+      g.items.forEach(([t,o])=>{
+        const id='c'+(n++);const row=document.createElement('div');row.className='check'+(done[id]?' done':'');
+        row.innerHTML=`<input type="checkbox" id="${id}" ${done[id]?'checked':''}><label for="${id}">${ek('chk-'+id,t)}</label><span class="owner ${o==='Michelle'?'mich':''}">${o}</span>`;
+        grp.appendChild(row);
+      });
+      box.appendChild(grp);cw.appendChild(box);
+    });
+    prog();applyEditable();
+  }
+  function prog(){const all=cw.querySelectorAll('input');const c=[...all].filter(i=>i.checked).length;document.getElementById('prog').textContent=c+'/'+all.length}
+  cw.addEventListener('click',e=>{if(editing&&e.target.closest('label [data-k]'))e.preventDefault()});
+  cw.addEventListener('change',async e=>{
+    const i=e.target;done={...done,[i.id]:i.checked};i.closest('.check').classList.toggle('done',i.checked);prog();
+    if(DB)await saveDoc('checks',{done});else store.set('uom-checks',done);
+  });
+  renderChecks();
+
+  /* ---------- static text made editable ---------- */
+  const STATIC=['#p-strategy > .intro','#p-strategy .grid3 .eyebrow','#p-strategy .grid3 p','#p-scripts > .intro','#p-week > .intro','#p-week .guard li',
+    '#p-lane > .intro','#p-lane h3','#p-lane li','#p-tracker > .intro','#p-tracker .col p','#p-tracker .box li','#p-launch .intro'];
+  const statics=[];STATIC.forEach((sel,si)=>document.querySelectorAll(sel).forEach((el,i)=>{el.dataset.k='s'+si+'-'+i;el.dataset.html=el.innerHTML;statics.push(el)}));
+  function applyStatic(){statics.forEach(el=>{const e=EDIT[el.dataset.k];if(e&&typeof e.text==='string'){el.textContent=e.text;el.dataset.orig=e.text}else{el.innerHTML=el.dataset.html;el.dataset.orig=el.innerText.trim()}})}
+
+  /* ---------- editing ---------- */
+  function applyEditable(){
+    document.querySelectorAll('[data-k]').forEach(el=>{
+      if(!editing){el.removeAttribute('contenteditable');return}
+      el.setAttribute('contenteditable','plaintext-only');
+      if(el.contentEditable!=='plaintext-only')el.setAttribute('contenteditable','true');
+      if(!el.hasAttribute('data-orig'))el.dataset.orig=el.innerText.trim();
+    });
+  }
+  function rerender(){render();renderTpls();renderWeek(curMode);applyStatic();renderChecks()}
+  const $state=document.getElementById('save-state');
+  let DB=null,stateTimer;
+  function say(t,keep){$state.textContent=t;clearTimeout(stateTimer);if(!keep)stateTimer=setTimeout(()=>$state.textContent='',2500)}
+  async function saveDoc(k,data){
+    if(!DB)return;say('Saving…',true);
+    try{await DB.collection('edits').doc(k).set(data);say('Saved')}
+    catch(err){if(err&&err.code==='invalid_argument'){say('You can view this page but not edit it',true);setEditing(false);document.getElementById('edit-btn').hidden=true}
+      else if(err&&err.code==='quota_exceeded')say('Storage is full. Remove some templates first.',true);
+      else say('Couldn\'t save. Try again in a moment.',true)}
+  }
+  async function removeDoc(k){if(!DB)return;say('Saving…',true);try{await DB.collection('edits').doc(k).delete();say('Saved')}catch(err){say('Couldn\'t save. Try again in a moment.',true)}}
+  document.addEventListener('keydown',e=>{
+    const el=e.target.closest&&e.target.closest('[data-k]');
+    if(!el||!editing)return;
+    if(e.key==='Enter'&&el.dataset.f!=='body'){e.preventDefault();el.blur()}
+    if(e.key==='Escape'){el.innerText=el.dataset.orig||el.innerText;el.blur()}
+  });
+  document.addEventListener('focusout',async e=>{
+    const el=e.target.closest&&e.target.closest('[data-k]');
+    if(!el||!editing)return;
+    const k=el.dataset.k;
+    if(el.dataset.f){
+      const art=el.closest('.tpl');const get=f=>{const x=art.querySelector(`[data-f="${f}"]`);return f==='body'?x.innerText.replace(/\n$/,''):x.innerText.trim()};
+      const t=TPLS.find(x=>x.k===k);const next={title:get('title'),subj:get('subj'),body:get('body')};
+      if(t&&next.title===t.title&&next.subj===t.subj&&next.body===t.body){flush();return}
+      await saveDoc(k,{...(EDIT[k]||{}),...next,cat:t?t.cat:'email'});
+    } else {
+      const text=el.innerText.trim();
+      if(text===(el.dataset.orig||'').trim()){flush();return}
+      if(!text){await removeDoc(k);return}
+      el.dataset.orig=text;await saveDoc(k,{text});
+    }
+    flush();
+  });
+  function flush(){setTimeout(()=>{if(pending&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('[data-k]'))){pending=false;rerender()}},0)}
+  function setEditing(on){
+    editing=on;document.body.classList.toggle('editing',on);
+    const b=document.getElementById('edit-btn');b.setAttribute('aria-pressed',on);b.textContent=on?'Done editing':'Edit page';
+    applyEditable();
+  }
+  document.getElementById('edit-btn').addEventListener('click',()=>setEditing(!editing));
+
+  (async()=>{
+    if(!window.claude||!window.claude.use)return;
+    const db=await window.claude.use('db');if(!db)return;
+    DB=db;
+    const user=await window.claude.use('user');
+    const can=user?await user.can('data.write'):null;
+    if(can!==false)document.getElementById('edit-btn').hidden=false;
+    db.collection('edits').onSnapshot(snap=>{
+      const next={};snap.docs.forEach(d=>{if(d.exists)next[d.id]=d.data()});
+      EDIT=next;
+      if(EDIT.checks&&EDIT.checks.done)done={...EDIT.checks.done};
+      const a=document.activeElement;
+      if(editing&&a&&a.closest&&a.closest('[data-k]'))pending=true;else rerender();
+    },()=>{say('Live updates paused. Reload to see the latest changes.',true)});
+  })();
+})();
+</script>
+
+</body>
+</html>
